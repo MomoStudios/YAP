@@ -7,6 +7,8 @@ game.PlayerEntity = me.Entity.extend({
      * constructor
      */
     init: function (x, y, settings) {
+        settings.framewidth = 64;
+        settings.image = yap.sprites.PLAYER;
         // call the constructor
         this._super(me.Entity, 'init', [x, y , settings]);
 
@@ -25,13 +27,13 @@ game.PlayerEntity = me.Entity.extend({
         this.alwaysUpdate = true;
 
         // define a basic walking animation (using all frames)
-        this.renderable.addAnimation("walk",  [0, 1, 2, 3, 4, 5, 6, 7]);
+        this.renderable.addAnimation(yap.animations.PLAYER_WALK,  [0, 1, 2, 3, 4, 5, 6, 7]);
 
         // define a standing animation (using the first frame)
-        this.renderable.addAnimation("stand",  [0]);
+        this.renderable.addAnimation(yap.animations.PLAYER_STAND,  [0]);
 
         // set the standing animation as default
-        this.renderable.setCurrentAnimation("stand");
+        this.renderable.setCurrentAnimation(yap.animations.PLAYER_STAND);
 
         // define myself as a player object, bro
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
@@ -56,36 +58,36 @@ game.PlayerEntity = me.Entity.extend({
      */
     update : function (dt) {
 
-        if (me.input.isKeyPressed('left')) {
+        if (me.input.isKeyPressed(yap.control.LEFT)) {
 
             // flip the sprite on horizontal axis
             this.renderable.flipX(true);
             // update the default force
             this.body.force.x = -this.body.maxVel.x;
             // change to the walking animation
-            if (!this.renderable.isCurrentAnimation("walk")) {
-                this.renderable.setCurrentAnimation("walk");
+            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK)) {
+                this.renderable.setCurrentAnimation(yap.animations.PLAYER_WALK);
             }
-        } else if (me.input.isKeyPressed('right')) {
+        } else if (me.input.isKeyPressed(yap.control.RIGHT)) {
   
             // unflip the sprite
             this.renderable.flipX(false);
             // update the entity velocity
             this.body.force.x = this.body.maxVel.x;
             // change to the walking animation
-            if (!this.renderable.isCurrentAnimation("walk")) {
-                this.renderable.setCurrentAnimation("walk");
+            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK)) {
+                this.renderable.setCurrentAnimation(yap.animations.PLAYER_WALK);
             }
         } else {
             this.body.force.x = 0;
             // change to the standing animation
-            this.renderable.setCurrentAnimation("stand");
+            this.renderable.setCurrentAnimation(yap.animations.PLAYER_STAND);
         }
   
-        if (me.input.isKeyPressed('jump')) {
+        if (me.input.isKeyPressed(yap.control.JUMP)) {
             if (!this.body.jumping && !this.body.falling)
             {
-                me.audio.play("jump");
+                me.audio.play(yap.audio.JUMP);
                 // set current vel to the maximum defined value
                 // gravity will then do the rest
                 this.body.force.y = -this.body.maxVel.y
@@ -102,6 +104,9 @@ game.PlayerEntity = me.Entity.extend({
                 this.cur_i_time = 0;
             }
         }
+
+        // light atatcks
+        
         
         // apply physics to the body (this moves the entity)
         this.body.update(dt);
@@ -121,22 +126,21 @@ game.PlayerEntity = me.Entity.extend({
         switch (other.body.collisionType) {
             case me.collision.types.WORLD_SHAPE:
                 // Simulate a platform object
-                if (other.type === "solid"){
+                if (other.type === yap.object_types.WORLD){
                     return true;
-                } else if (other.type === "spike") {
+                } else if (other.type === yap.object_types.HAZARD) {
                     // just avoid spamming the clip every frame mid-transition
                     if (!this.invincible) {
-                        me.audio.play("scream");
+                        me.audio.play(yap.audio.DAMAGE);
                         this.game_over(false);
                         this.invincible = true;
                     }
-                } else if (other.type === "level_end") {
-                    me.audio.play("cling");
+                } else if (other.type === yap.object_types.LEVEL_END) {
+                    me.audio.play(yap.audio.CLING);
                     this.game_over(true);
-                } else if (other.type === "platform") {
+                } else if (other.type === yap.object_types.PLATFORM) {
                     if (
                         this.body.falling &&
-                        !me.input.isKeyPressed('down') &&
                         // Shortest overlap would move the player upward
                         (response.overlapV.y > 0) &&
                         // The velocity is reasonably fast enough to have penetrated to the overlap depth
@@ -156,7 +160,7 @@ game.PlayerEntity = me.Entity.extend({
       
             case me.collision.types.ENEMY_OBJECT:
                 if ((response.overlapV.y > 0) && !this.body.jumping) {
-                    me.audio.play("stomp");
+                    me.audio.play(yap.audio.KILL_STOMP);
                     // bounce (force jump)
                     this.body.falling = false;
                     this.body.vel.y = -this.body.maxVel.y * 1.25;
@@ -167,7 +171,7 @@ game.PlayerEntity = me.Entity.extend({
                 }
                 else {
                     if (!this.invincible){
-                        me.audio.play("scream", false, null, 0.5);
+                        me.audio.play(yap.audio.DAMAGE, false, null, 0.5);
                         game.data.score -= 500;
                         this.renderable.flicker(this.i_timeout);
                         this.invincible = true;
@@ -184,9 +188,9 @@ game.PlayerEntity = me.Entity.extend({
 
 game.CoinEntity = me.CollectableEntity.extend({
     init: function (x, y, settings) {
-        settings.framewidth = 32
-        settings.frameheight = 32
-        settings.image = "spinning_coin_gold"
+        settings.framewidth = 32;
+        settings.frameheight = 32;
+        settings.image = yap.sprites.COIN;
         // call the parent constructor
         this._super(me.CollectableEntity, 'init', [x, y , settings]);
     },
@@ -195,8 +199,8 @@ game.CoinEntity = me.CollectableEntity.extend({
     // an object is touched by something (here collected)
     onCollision : function (response, other) {
         if (other.body.collisionType === me.collision.types.PLAYER_OBJECT) {
-            game.data.score += 250
-            me.audio.play("cling");
+            game.data.score += 250;
+            me.audio.play(yap.audio.CLING);
 
             // make sure it cannot be collected "again"
             this.body.setCollisionMask(me.collision.types.NO_OBJECT);
@@ -215,7 +219,7 @@ game.EnemyEntity = me.Entity.extend({
         var width = settings.width;
 
         // define this here instead of tiled
-        settings.image = "wheelie_right";
+        settings.image = yap.sprites.ENEMY;
 
         // adjust the size setting information to match the sprite size
         // so that the entity object is created with the right size

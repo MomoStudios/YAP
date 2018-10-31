@@ -6,7 +6,7 @@ game.GameOverScreen = me.ScreenObject.extend({
         me.game.viewport.moveTo(0, 0);
         var backgroundImage = new me.Sprite(0, 0,
             {
-                image: me.loader.getImage('game_over'),
+                image: me.loader.getImage(yap.backgrounds.GAME_OVER_SCREEN),
             }
         );
         
@@ -25,7 +25,7 @@ game.GameOverScreen = me.ScreenObject.extend({
                 this.anchorPoint.set(0, 0);
     
                 // font for the scrolling text
-                this.font = new me.BitmapFont(me.loader.getBinary('PressStart2P'), me.loader.getImage('PressStart2P'), 1, "center", "top");
+                this.font = new me.BitmapFont(me.loader.getBinary(yap.fonts.DEFAULT_FONT), me.loader.getImage(yap.fonts.DEFAULT_FONT), 1, "center", "top");
 
                 this.score_text = "Final Score: " + String(game.data.score);
                 if (game.data.won){
@@ -63,10 +63,10 @@ game.GameOverScreen = me.ScreenObject.extend({
             }
         })), 2);
     
-        me.input.bindKey(me.input.KEY.ENTER, "enter", true);
+        me.input.bindKey(me.input.KEY.ENTER, yap.control.SELECT, true);
         this.handler = me.event.subscribe(me.event.KEYDOWN, function (action, keyCode, edge) {
-            if (action === "enter") {
-                me.audio.play("cling");
+            if (action === yap.control.SELECT) {
+                me.audio.play(yap.audio.RESTART);
                 me.state.change(me.state.MENU);
             }
         });

@@ -6,7 +6,7 @@ game.TitleScreen = me.ScreenObject.extend({
         me.game.viewport.moveTo(0, 0);
         var backgroundImage = new me.Sprite(0, 0,
             {
-                image: me.loader.getImage('title_screen'),
+                image: me.loader.getImage(yap.backgrounds.TITLE_SCREEN),
             }
         );
         
@@ -24,7 +24,8 @@ game.TitleScreen = me.ScreenObject.extend({
                 this._super(me.Renderable, 'init', [0, 0, me.game.viewport.width, me.game.viewport.height]);
         
                 // font for the scrolling text
-                this.font = new me.BitmapFont(me.loader.getBinary('PressStart2P'), me.loader.getImage('PressStart2P'));
+                this.font = new me.BitmapFont(me.loader.getBinary(yap.fonts.DEFAULT_FONT),
+                                              me.loader.getImage(yap.fonts.DEFAULT_FONT));
         
                 // a tween to animate the arrow
                 this.scrollertween = new me.Tween(this);
@@ -56,12 +57,12 @@ game.TitleScreen = me.ScreenObject.extend({
         })), 2);
     
         // change to play state on press Enter or click/tap
-        me.input.bindKey(me.input.KEY.ENTER, "enter", true);
+        me.input.bindKey(me.input.KEY.ENTER, yap.control.SELECT, true);
         this.handler = me.event.subscribe(me.event.KEYDOWN, function (action, keyCode, edge) {
-            if (action === "enter") {
+            if (action === yap.control.SELECT) {
                 // play something on tap / enter
                 // this will unlock audio on mobile devices
-                me.audio.play("cling");
+                me.audio.play(yap.audio.GAME_START);
                 me.state.change(me.state.PLAY);
             }
         });

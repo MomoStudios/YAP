@@ -3,7 +3,7 @@ game.PlayScreen = me.ScreenObject.extend({
      *  action to perform on state change
      */
     onResetEvent: function() {
-        me.levelDirector.loadLevel("bg")
+        me.levelDirector.loadLevel(yap.levels.LEVEL_ONE)
         // reset the score
         game.data.score = 0;
 
@@ -11,7 +11,7 @@ game.PlayScreen = me.ScreenObject.extend({
         // Can also be forced by specifying a "Infinity" z value to the addChild function.
         this.HUD = new game.HUD.Container();
         me.game.world.addChild(this.HUD);
-        me.audio.playTrack("dst-inertexponent");
+        me.audio.playTrack(yap.audio.BACKGROUND_TRACK);
     },
 
     /**

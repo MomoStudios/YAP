@@ -36,17 +36,15 @@ var game = {
         me.state.transition("fade", "#FFFFFF", 250);
       
         // register our player entity in the object pool
-        me.pool.register("mainPlayer", game.PlayerEntity);
-        me.pool.register("CoinEntity", game.CoinEntity);
-        me.pool.register("EnemyEntity", game.EnemyEntity);
+        me.pool.register(yap.entity_types.PLAYER_ENTITY, game.PlayerEntity);
+        me.pool.register(yap.entity_types.COIN_ENTITY, game.CoinEntity);
+        me.pool.register(yap.entity_types.ENEMY_ENTITY, game.EnemyEntity);
       
         // enable the keyboard
-        me.input.bindKey(me.input.KEY.LEFT,  "left");
-        me.input.bindKey(me.input.KEY.RIGHT, "right");
+        me.input.bindKey(me.input.KEY.LEFT,  yap.control.LEFT);
+        me.input.bindKey(me.input.KEY.RIGHT, yap.control.RIGHT);
         // map X, Up Arrow and Space for jump
-        me.input.bindKey(me.input.KEY.X,      "jump", true);
-        me.input.bindKey(me.input.KEY.UP,     "jump", true);
-        me.input.bindKey(me.input.KEY.SPACE,  "jump", true);
+        me.input.bindKey(me.input.KEY.SPACE,  yap.control.JUMP, true);
       
         // start the game
         me.state.change(me.state.MENU);
