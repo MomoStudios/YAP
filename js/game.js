@@ -1,12 +1,19 @@
-
-/* Game namespace */
 var game = {
 
-    // an object where to store game information
     data : {
-        // score
         score : 0,
         won : false
+    },
+
+    // custom collision types
+    collisionTypes : {
+        PLAYER_HITBOX : me.collision.types.USER << 0,
+        ENEMY_HITBOX : me.collision.types.USER << 1,
+    },
+
+    // log function. For now, just throw it to console
+    log : function(message) {
+        console.log(message)
     },
 
 
@@ -43,8 +50,8 @@ var game = {
         // enable the keyboard
         me.input.bindKey(me.input.KEY.LEFT,  yap.control.LEFT);
         me.input.bindKey(me.input.KEY.RIGHT, yap.control.RIGHT);
-        // map X, Up Arrow and Space for jump
         me.input.bindKey(me.input.KEY.SPACE,  yap.control.JUMP, true);
+        me.input.bindKey(me.input.KEY.Z, yap.control.LIGHT_ATTACK, true);
       
         // start the game
         me.state.change(me.state.MENU);

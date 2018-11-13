@@ -38,10 +38,17 @@ game.PlayerEntity = me.Entity.extend({
         // define myself as a player object, bro
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
 
+        this.facing_left = false;
+
         // for when we really just don't want to take damage
         this.invincible = false;
         this.i_timeout = 500;
         this.cur_i_time = 0;
+
+        this.attacking = false;
+        this.cur_attack_data = null;
+        this.cur_attack = null;
+        this.attack_timing = 0;
     },
 
     /**
@@ -53,35 +60,116 @@ game.PlayerEntity = me.Entity.extend({
         me.game.viewport.unfollow();
     },
 
+    start_attack: function(cur_attack_data){
+        this.attacking = true;
+        this.attack_timing = 0;
+        this.cur_attack_data = cur_attack_data;
+        if (this.cur_attack != null) {
+            game.log("last player attack wasn't ended properly");
+            this.end_attack();
+        }
+    },
+
+    create_attack_hitbox: function(){
+        if (this.cur_attack_data == null){
+            game.log("No attack data set! Things are about to go boom...");
+        }
+        this.cur_attack = new game.AttackEntity(this, true, this.cur_attack_data);
+
+        me.game.world.addChild(this.cur_attack);
+    },
+
+    remove_attack_hitbox: function(){
+        if (this.cur_attack_data == null){
+            game.log("Hey buddy, you called cleanup with no attack data to cleanup. weird.");
+        } else {
+            me.game.world.removeChild(this.cur_attack);
+            // TODO: see if any other cleanup is required
+            this.cur_attack = null;
+        }
+    },
+
+    end_attack: function(){
+
+        this.attacking = false;
+        // TODO: do I need to do anything special to make sure this doesn't stay in memory?
+        // TODO: or does this just get handled by gc?
+        this.cur_attack_data = null;
+        
+        if (this.cur_attack != null) {
+            this.remove_attack_hitbox();
+        };
+    },
+
     /**
      * update the entity
      */
     update : function (dt) {
 
+        // handle attacks first, so that animations are handled properly
+        if (me.input.isKeyPressed(yap.control.LIGHT_ATTACK) && !this.attacking){
+            this.start_attack(yap.player_attacks.LIGHT_ATTACK);
+        }
+
+        if (this.attacking){
+
+            this.attack_timing += dt;
+
+            // if we've finished the attack, and we went past the recovery duration, then end the attack completely
+            if (this.cur_attack === null && this.attack_timing >= this.cur_attack_data.recovery_duration){
+                this.end_attack();
+
+            // if we've started the attack, and we went past the active duration, then stop it
+            } else if (this.cur_attack !== null && this.attack_timing >= this.cur_attack_data.active_duration) {
+                this.remove_attack_hitbox();
+
+                // special case: if there's no recovery, end the attack now
+                if (this.attack_timing >= this.cur_attack_data.recovery_duration) {
+                    this.end_attack();
+                }
+
+            // if we haven't started the attack, and we haven't started the attack yet, then start it
+            } else if (this.cur_attack === null &&
+                       this.attack_timing >= this.cur_attack_data.start_duration &&
+                       this. attack_timing < this.cur_attack_data.active_duration) {
+                if (this.cur_attack == null){
+                    this.create_attack_hitbox();
+                }
+            } 
+
+            if (this.attacking && !this.renderable.isCurrentAnimation(this.cur_attack_data.animation)){
+                this.renderable.setCurrentAnimation(this.cur_attack_data.animation);
+            }
+        }
+
         if (me.input.isKeyPressed(yap.control.LEFT)) {
 
             // flip the sprite on horizontal axis
+            this.facing_left = true;
             this.renderable.flipX(true);
             // update the default force
             this.body.force.x = -this.body.maxVel.x;
             // change to the walking animation
-            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK)) {
+            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK) && !this.attacking) {
                 this.renderable.setCurrentAnimation(yap.animations.PLAYER_WALK);
             }
         } else if (me.input.isKeyPressed(yap.control.RIGHT)) {
   
             // unflip the sprite
+            this.facing_left = false;
             this.renderable.flipX(false);
             // update the entity velocity
             this.body.force.x = this.body.maxVel.x;
             // change to the walking animation
-            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK)) {
+            if (!this.renderable.isCurrentAnimation(yap.animations.PLAYER_WALK) && !this.attacking) {
                 this.renderable.setCurrentAnimation(yap.animations.PLAYER_WALK);
             }
         } else {
             this.body.force.x = 0;
             // change to the standing animation
-            this.renderable.setCurrentAnimation(yap.animations.PLAYER_STAND);
+            if (!this.attacking){
+                this.renderable.setCurrentAnimation(yap.animations.PLAYER_STAND);
+            }
         }
   
         if (me.input.isKeyPressed(yap.control.JUMP)) {
@@ -104,9 +192,6 @@ game.PlayerEntity = me.Entity.extend({
                 this.cur_i_time = 0;
             }
         }
-
-        // light atatcks
-        
         
         // apply physics to the body (this moves the entity)
         this.body.update(dt);
@@ -185,6 +270,54 @@ game.PlayerEntity = me.Entity.extend({
         }
     }
 });
+
+game.AttackEntity = me.Entity.extend({
+    init: function (source_object, is_player_attack, attack_data){
+        this.attack_data = attack_data;
+        this.source_obj = source_object;
+
+        cur_pos = this.get_pos();
+
+        this._super(me.Entity, 'init', [
+            cur_pos.x,
+            cur_pos.y,
+            {
+                width: this.attack_data.hitbox.w,
+                height: this.attack_data.hitbox.h
+            }
+        ]);
+
+        // TODO: verify whether any more code is needed so that this is only moved by the update function
+
+        if (is_player_attack) {
+            this.body.collisionType = game.collisionTypes.PLAYER_HITBOX;
+        }
+        else {
+            this.body.collisionType = game.collisionTypes.ENEMY_HITBOX;
+        }
+    },
+
+    get_pos: function () {
+        if (this.source_obj.facing_left) {
+            return {
+                x : this.source_obj.pos.x - this.attack_data.hitbox.w - this.attack_data.hitbox.x,
+                y : this.source_obj.pos.y + this.attack_data.hitbox.y
+            }
+        } 
+        return {
+            x : this.source_obj.pos.x + this.source_obj.width + this.attack_data.hitbox.x,
+            y : this.source_obj.pos.y + this.attack_data.hitbox.y
+        }
+    },
+
+    update : function (dt) {
+        // just keep the position in the correct place
+        cur_pos = this.get_pos();
+
+        this.pos.x = cur_pos.x;
+        this.pos.y = cur_pos.y;
+    }
+})
 
 game.CoinEntity = me.CollectableEntity.extend({
     init: function (x, y, settings) {

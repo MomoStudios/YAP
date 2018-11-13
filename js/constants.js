@@ -13,6 +13,21 @@ yap = {
 
     },
 
+    player_attacks: {
+        LIGHT_ATTACK: {
+            start_duration: 200,
+            active_duration: 800,
+            recovery_duration: 1500,
+            hitbox: {
+                x: 0,
+                y: 0,
+                w: 64,
+                h: 10
+            },
+            animation: "stand"
+        }
+    },
+
     levels: {
         LEVEL_ONE: "level_one",
         LEVEL_TWO: "level_two"
@@ -50,7 +65,6 @@ yap = {
     animations: {
         PLAYER_WALK: "walk",
         PLAYER_STAND: "stand",
-        PLAYER_ATTACK: "attack",
     },
 
     backgrounds: {

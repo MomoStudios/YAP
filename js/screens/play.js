@@ -11,7 +11,7 @@ game.PlayScreen = me.ScreenObject.extend({
         // Can also be forced by specifying a "Infinity" z value to the addChild function.
         this.HUD = new game.HUD.Container();
         me.game.world.addChild(this.HUD);
-        me.audio.playTrack(yap.audio.BACKGROUND_TRACK);
+        //me.audio.playTrack(yap.audio.BACKGROUND_TRACK);
     },
 
     /**
